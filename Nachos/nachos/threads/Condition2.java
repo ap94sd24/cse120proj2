@@ -2,6 +2,8 @@ package nachos.threads;
 
 import nachos.machine.*;
 
+import java.util.LinkedList;
+
 /**
  * An implementation of condition variables that disables interrupt()s for
  * synchronization.
@@ -21,8 +23,11 @@ public class Condition2 {
      *				<tt>wake()</tt>, or <tt>wakeAll()</tt>.
      */
     public Condition2(Lock conditionLock) {
-	this.conditionLock = conditionLock;
+	     this.conditionLock = conditionLock;
+	     
+	     //waitQueue = new LinkedList<ThreadKernel>(); 
     }
+    
 
     /**
      * Atomically release the associated lock and go to sleep on this condition
@@ -31,9 +36,24 @@ public class Condition2 {
      * automatically reacquire the lock before <tt>sleep()</tt> returns.
      */
     public void sleep() {
+    	boolean intStatus = Machine.interrupt().disable();
+    
 	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
-
+	
+	//initialize wait value
+    //waitQueue.add(wait);
+	
 	conditionLock.release();
+
+	if (value == 0) {
+	    waitQueue.waitForAccess(KThread.currentThread());
+	    KThread.sleep();
+	}
+	else {
+	    value--;
+	}
+
+	Machine.interrupt().restore(intStatus);	
 
 	conditionLock.acquire();
     }
@@ -43,7 +63,20 @@ public class Condition2 {
      * current thread must hold the associated lock.
      */
     public void wake() {
-	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+    	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+    	
+    	boolean intStatus = Machine.interrupt().disable();
+
+    	KThread thread = waitQueue.nextThread();
+    	if (thread != null) {
+    	    thread.ready();
+    	}
+    	else {
+    	    value++;
+    	}
+    	
+    	Machine.interrupt().restore(intStatus);
+	
     }
 
     /**
@@ -51,8 +84,15 @@ public class Condition2 {
      * thread must hold the associated lock.
      */
     public void wakeAll() {
-	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+    	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+	 	wake(); 
     }
-
+    
+    private int value; 
     private Lock conditionLock;
+    private ThreadQueue waitQueue =
+    		ThreadedKernel.scheduler.newThreadQueue(false);
+	public void call() {
+		// TODO Auto-generated method stub
+	}
 }
