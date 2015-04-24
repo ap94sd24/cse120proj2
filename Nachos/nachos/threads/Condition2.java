@@ -88,6 +88,60 @@ public class Condition2 {
 	 	wake(); 
     }
     
+    public static void selfTest(){
+    	int[] item = new int[1];
+    	item[0] = 0;
+    	Lock lock = new Lock();
+    	Condition2 con = new Condition2(lock);
+    	KThread producer = new KThread(new Producer(item, lock, con));
+    	KThread consumer1 = new KThread(new Consumer(item, lock, con));
+    	KThread consumer2 = new KThread(new Consumer(item, lock, con));
+    	System.out.println("\n----------------------------------------------\nTEST CONDITION2\n");
+    	consumer1.fork();
+    	consumer2.fork();
+    	producer.fork();
+    	//ThreadedKernel.alarm.waitUntil(100000);
+    }
+    
+    private static class Consumer implements Runnable{
+    	private int[] item;
+    	private Lock lock;
+    	private Condition2 sleepingConsumers;
+    	public Consumer(int[] iteM, Lock lock, Condition2 con_var){
+    		item = iteM;
+    		this.lock = lock;
+    		sleepingConsumers = con_var;
+    	}
+    	public void run(){
+    		lock.acquire();
+    		while(item[0] < 1){
+    			System.out.println("Consumer: no item, so I sleep.");
+    			sleepingConsumers.sleep();
+    		}
+    		item[0] -= 1;
+    		System.out.println("Consumer: I use 1 item.");
+    		lock.release();
+    	}
+    }
+    
+    private static class Producer implements Runnable{
+    	private int[] item;
+    	private Lock lock;
+    	private Condition2 sleepingConsumers;
+    	public Producer(int[] iteM, Lock lock, Condition2 con_var){
+    		item = iteM;
+    		this.lock = lock;
+    		sleepingConsumers = con_var;
+    	}
+    	public void run(){
+    		lock.acquire();
+    		item[0] += 1;
+    		System.out.println("Producer: I make one item.");
+    		sleepingConsumers.wakeAll();
+    		lock.release();
+    	}
+    }
+    
     private int value; 
     private Lock conditionLock;
     private ThreadQueue waitQueue =

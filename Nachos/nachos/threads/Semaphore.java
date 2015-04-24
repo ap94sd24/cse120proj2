@@ -36,20 +36,14 @@ public class Semaphore {
      */
     public void P() {
 	boolean intStatus = Machine.interrupt().disable();
-	System.out.println("int status: "+intStatus);
-	System.out.println(value);
 	if (value == 0) {
 	    waitQueue.waitForAccess(KThread.currentThread());
-	    System.out.println("still waiting");
 	    KThread.sleep();
-	    System.out.println("sleeping like a baby");
 	}
 	else {
 	    value--;
 	}
-	System.out.println("i'm almost there");
 	Machine.interrupt().restore(intStatus);
-	System.out.println("finished");
     }
 
     /**
@@ -58,7 +52,7 @@ public class Semaphore {
      */
     public void V() {
 	boolean intStatus = Machine.interrupt().disable();
-
+	
 	KThread thread = waitQueue.nextThread();
 	if (thread != null) {
 	    thread.ready();

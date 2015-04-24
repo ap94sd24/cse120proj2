@@ -67,6 +67,7 @@ public class KThread {
     public KThread(Runnable target) {
 	this();
 	this.target = target;
+	s = new Semaphore(0);
     }
 
     /**
@@ -158,6 +159,7 @@ public class KThread {
     private void runThread() {
 	begin();
 	target.run();
+	s.V();
 	finish();
     }
 
@@ -273,38 +275,20 @@ public class KThread {
      * thread.
      */
     public void join() {
-    	
-    /*
-     * PSEUDO CODE:
-     * disable all interrupts
-     * 
-     *	if(joinQueue not set)
-     *		create new joinQueue
-     *		set KThread to new joinQueue
-     * 	if( current thread is new)
-     * 		add current thread to joinQueue
-     * 		set current thread to sleep
-     *  enable all interrupts
-     */
-    Machine.interrupt().setStatus(false);
-    if(readyQueue == null){
-    	readyQueue = ThreadedKernel.scheduler.newThreadQueue(true);
-    	readyQueue.acquire(currentThread);
-    } 
-    if(!currentThread.equals(this)){
-    	sleep();
-    }
-    
-    Machine.interrupt().enable();
 	Lib.debug(dbgThread, "Joining to thread: " + toString());
-	
-/*
+
 	Lib.assertTrue(this != currentThread);
-*/
+	
+	if(this.status != statusFinished){
+		s.P();
+	}
+	else{
+		return;
+	}
+	
     }
 
     /**
-     * Create the idle thread. Whenever there are no threads ready to be run,
      * and <tt>runNextThread()</tt> is called, it will run the idle thread. The
      * idle thread must never block, and it will only be allowed to run when
      * all other threads are blocked.
@@ -426,11 +410,73 @@ public class KThread {
      */
     public static void selfTest() {
 	Lib.debug(dbgThread, "Enter KThread.selfTest");
-	
-	new KThread(new PingTest(1)).setName("forked thread").fork();
-	new KThread(new PingTest(1)).setName("join thread").join();
+	/*
+	KThread k = new KThread(new PingTest(1));
+	k.setName("forked thread");
+	k.fork();
+	KThread k1 = new KThread(new PingTest(1));
+	k.setName("joined thread");
+	k.join();
 	new PingTest(0).run();
+	*/
 	
+	KThread k = new KThread(new Runnable(){
+		public void run(){
+			for(int i = 1; i < 10; i++){
+				System.out.println(i);
+			}
+		}	
+	});
+	k.setName("join thread");
+	/*
+	KThread k1 = new KThread(new Runnable(){
+		public void run(){
+			for(int i = 1; i < 10; i++){
+				System.out.println(i);
+			}
+		}
+	});
+	*/
+	k.fork();
+	//k1.fork();
+	//k.join();
+	k.join();
+	/*
+	final BoundedBuffer b = new BoundedBuffer(256);
+	
+	KThread k1 = new KThread(new Runnable(){
+		public void run(){
+			String str = "FUCK THIS SHIT, FUCK CSE 120";
+			for(int i = 0; i<str.length(); i++){
+				b.put(str.charAt(i));
+			}
+			for(int i = 0; i < str.length(); i++){
+				System.out.println(b.get());
+			}
+		}	
+	});
+
+	
+	KThread k2 = new KThread(new Runnable(){
+		public void run(){
+			String str = "SHIT IS TOO HARD, FUCK MY LIFE";
+			for(int i = 0; i<str.length(); i++){
+				b.put(str.charAt(i));
+			}
+			for(int i = 0; i < str.length(); i++){
+				System.out.println(b.get());
+			}
+		}	
+	});
+	
+	k1.fork();
+	k2.fork();
+	k2.join();
+	k1.join();
+	
+	System.out.println("K1 SHOULD FINISH");
+	*/
+	System.out.println("K SHOULD BE FINISHED.");
     }
     
     private static final char dbgThread = 't';
@@ -457,6 +503,8 @@ public class KThread {
     private String name = "(unnamed thread)";
     private Runnable target;
     private TCB tcb;
+    
+    private Semaphore s;
 
     /**
      * Unique identifer for this thread. Used to deterministically compare
