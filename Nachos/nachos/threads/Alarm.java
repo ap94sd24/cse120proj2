@@ -1,6 +1,10 @@
 package nachos.threads;
 
+import java.util.LinkedList;
+
 import nachos.machine.*;
+
+ 
 
 /**
  * Uses the hardware timer to provide preemption, and to allow threads to sleep
@@ -27,7 +31,17 @@ public class Alarm {
      * that should be run.
      */
     public void timerInterrupt() {
-	KThread.currentThread().yield();
+	  //  KThread.currentThread().yield();
+	    
+	    // loop through queue 
+	    while (!tempqueue.isEmpty()) {
+	    	//if (waitUntil(x))
+	    	if (Machine.timer().getTime() >= Machine.timer().getTime() + x) {
+	        waitUntil(x); 
+	    	tempqueue.remove();
+	    	KThread.currentThread().yield();
+	    	}
+	    }    
     }
 
     /**
@@ -47,7 +61,44 @@ public class Alarm {
     public void waitUntil(long x) {
 	// for now, cheat just to get something working (busy waiting is bad)
 	long wakeTime = Machine.timer().getTime() + x;
-	while (wakeTime > Machine.timer().getTime())
-	    KThread.yield();
+	Semaphore hold = new Semaphore(0);
+	tempqueue.add(hold);
+	
+	 while (wakeTime > Machine.timer().getTime()) {
+	    // KThread.yield();
+		
+		// put thread to sleep
+		 hold.P();
+		//KThread.currentThread().sleep();
+
+	    // Time is up
+	    if (Machine.timer().getTime() >= wakeTime) {
+	        //Signal semaphore for thread to wake
+	        hold.V();
+	        //put thread on ready queue 
+            KThread.yield();
+	    }
+	 }
+	   
     }
+    
+    public static void selfTest() {
+        KThread t1 = new KThread(new Runnable() {
+            public void run() {
+                long time1 = Machine.timer().getTime();
+                int waitTime = 10000;
+                System.out.println("Thread calling wait at time:" + time1);
+                ThreadedKernel.alarm.waitUntil(waitTime);
+                System.out.println("Thread woken up after:" + (Machine.timer().getTime() - time1));
+                Lib.assertTrue((Machine.timer().getTime() - time1) > waitTime, " thread woke up too early.");
+                
+            }
+        });
+        t1.setName("T1");
+        t1.fork();
+        t1.join();
+    }
+    
+   private long x;   
+   private LinkedList<Semaphore> tempqueue;       
 }
