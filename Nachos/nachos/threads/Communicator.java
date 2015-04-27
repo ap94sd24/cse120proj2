@@ -12,12 +12,11 @@ import nachos.machine.*;
 public class Communicator {
 	
 	Lock lock;
-	Condition speakerCon;
-	Condition listenerCon;
-	private int speaker = 0;
-	private int listener = 0;
+	Condition speakerCon; //speaker condition
+	Condition listenerCon; //listner condition
+	private boolean isFull;
 	
-	//store speak ids in some form of a list
+	//stored thread value
     private int comWord;
 	/**
      * Allocate a new communicator.
@@ -26,6 +25,7 @@ public class Communicator {
     	lock = new Lock();
     	speakerCon = new Condition(lock);
     	listenerCon = new Condition(lock);
+    	isFull = false;
     }
 
     /**
@@ -39,18 +39,22 @@ public class Communicator {
      * @param	word	the integer to transfer.
      */
     public void speak(int word) {
-    	lock.acquire();
-    	speaker++;
-    	while(listener == 0){
-    		System.out.println("WHEEE");
-    		listenerCon.sleep();
-    		listener--;
+    	//System.out.println("SPEAK");
+    	lock.acquire(); //only speak runs
+    	
+    	//System.out.println("isFull value: " + isFull);
+    	//wait until someone has listened before speaking
+    	while (isFull){
+    	    listenerCon.wakeAll();		
+    	    speakerCon.sleep();
+    	    //System.out.println("can't speak yet");
     	}
-    	listenerCon.wake();
-    	this.comWord = word;
-System.out.println("THIS IS SPEAKER: " + this.comWord + " THIS IS PARAM WORD: " + word);
-    	lock.release();
-    	System.out.println("AFTERMATH: " + this.comWord);
+    	comWord=word;
+    	isFull=true;
+    	listenerCon.wakeAll();
+    	
+    	lock.release(); //listen can now run
+    	//System.out.println("AFTERMATH: " + this.comWord);
     }
 
     /**
@@ -60,18 +64,19 @@ System.out.println("THIS IS SPEAKER: " + this.comWord + " THIS IS PARAM WORD: " 
      * @return	the integer transferred.
      */    
     public int listen() {
-    	System.out.println("BEFOREMATH : " + this.comWord);
-    	lock.acquire();
-    	listener++;
-    	while(speaker == 0){
-    		speakerCon.sleep();
-    		speaker--;
+    	//System.out.println("LISTEN");
+    	lock.acquire();  //only listen runs
+    	
+    	//if speaker hasn't run yet
+    	while(!isFull){
+    		//System.out.println("waiting for speaker to speak");
+    	    listenerCon.sleep();
     	}
-    	speakerCon.wake();
-    	lock.release();
-    	//if thread.speak == this.speak{
-    	// 	return; else find next speak
-    	System.out.println("LISTENING THIS COM WORD: " + this.comWord);
+    	
+    	int word = comWord;
+    	isFull=false;  
+    	speakerCon.wakeAll();
+    	lock.release();  //speaker can now run
     	return this.comWord;
     }
     
@@ -111,11 +116,11 @@ System.out.println("THIS IS SPEAKER: " + this.comWord + " THIS IS PARAM WORD: " 
         speaker1.fork(); speaker2.fork(); listener1.fork(); listener2.fork();
         speaker1.join(); speaker2.join(); listener1.join(); listener2.join();
         
-        System.out.println(words[0]);
-        System.out.println(words[1]);
-        Lib.assertTrue(words[0] == 0, "Didn't listen back spoken word."); 
-        Lib.assertTrue(words[1] == 0, "Didn't listen back spoken word.");
+        Lib.assertTrue(words[0] == 4, "Didn't listen back spoken word."); 
+        Lib.assertTrue(words[1] == 7, "Didn't listen back spoken word.");
         Lib.assertTrue(times[0] < times[2], "speak returned before listen.");
         Lib.assertTrue(times[1] < times[3], "speak returned before listen.");
+        
+        System.out.println("works");
     }
 }
