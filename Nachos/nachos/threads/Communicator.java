@@ -45,7 +45,7 @@ public class Communicator {
     	//System.out.println("isFull value: " + isFull);
     	//wait until someone has listened before speaking
     	while (isFull){
-    	    listenerCon.wakeAll();		
+    	    listenerCon.wake();		
     	    speakerCon.sleep();
     	    //System.out.println("can't speak yet");
     	}
