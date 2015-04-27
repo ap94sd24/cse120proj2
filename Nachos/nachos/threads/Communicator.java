@@ -13,10 +13,14 @@ public class Communicator {
 	
 	Lock lock;
 	Condition speakerCon; //speaker condition
-	Condition listenerCon; //listner condition
-	private boolean isFull;
+	Condition listenerCon; //listener condition
 	
-	//stored thread value
+	//variable to keep track on listen and spoken
+	//0 = do nothing
+	//1 = listen
+	//2 = speak
+	private int toDo; 
+	//stored communicator value
     private int comWord;
 	/**
      * Allocate a new communicator.
@@ -25,7 +29,7 @@ public class Communicator {
     	lock = new Lock();
     	speakerCon = new Condition(lock);
     	listenerCon = new Condition(lock);
-    	isFull = false;
+    	toDo = 0;
     }
 
     /**
@@ -41,16 +45,16 @@ public class Communicator {
     public void speak(int word) {
     	//System.out.println("SPEAK");
     	lock.acquire(); //only speak runs
-    	
+
     	//System.out.println("isFull value: " + isFull);
     	//wait until someone has listened before speaking
-    	while (isFull){
+    	while (toDo == 2){
     	    listenerCon.wake();		
     	    speakerCon.sleep();
     	    //System.out.println("can't speak yet");
     	}
-    	comWord=word;
-    	isFull=true;
+    	this.comWord = word;
+    	toDo = 2; //speaker has been done, now listen can run
     	listenerCon.wakeAll();
     	
     	lock.release(); //listen can now run
@@ -67,14 +71,12 @@ public class Communicator {
     	//System.out.println("LISTEN");
     	lock.acquire();  //only listen runs
     	
-    	//if speaker hasn't run yet
-    	while(!isFull){
+    	//haven't found a speaker who already spoke
+    	while(toDo == 1){
     		//System.out.println("waiting for speaker to speak");
     	    listenerCon.sleep();
-    	}
-    	
-    	int word = comWord;
-    	isFull=false;  
+    	} 
+    	toDo = 1;
     	speakerCon.wakeAll();
     	lock.release();  //speaker can now run
     	//System.out.println("AFTERMATH LISTEN: " + this.comWord);
@@ -116,6 +118,14 @@ public class Communicator {
         
         speaker1.fork(); speaker2.fork(); listener1.fork(); listener2.fork();
         speaker1.join(); speaker2.join(); listener1.join(); listener2.join();
+       
+        System.out.println("words  0: " + words[0]);
+        System.out.println("words 1: " + words[1]);
+        System.out.println("times : "  + times[0]);
+        System.out.println("times : "  + times[1]);
+        System.out.println("times : "  + times[2]);
+        System.out.println("times : "  + times[3]);
+        
         
         Lib.assertTrue(words[0] == 4, "Didn't listen back spoken word."); 
         Lib.assertTrue(words[1] == 7, "Didn't listen back spoken word.");

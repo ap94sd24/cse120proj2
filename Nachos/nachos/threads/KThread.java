@@ -43,6 +43,7 @@ public class KThread {
      * create an idle thread as well.
      */
     public KThread() {
+    	s = new Semaphore(0); //unique semaphore for each thread
 	if (currentThread != null) {
 	    tcb = new TCB();
 	}	    
@@ -67,7 +68,7 @@ public class KThread {
     public KThread(Runnable target) {
 	this();
 	this.target = target;
-	s = new Semaphore(0);
+	s = new Semaphore(0); //each thread has it's own semaphore
     }
 
     /**
@@ -279,6 +280,8 @@ public class KThread {
 
 	Lib.assertTrue(this != currentThread);
 	
+	//if child thread is finished running, then parent thread runs
+	//i think this is the parent
 	if(this.status != statusFinished){
 		s.P();
 	}
