@@ -77,6 +77,7 @@ public class Communicator {
     	isFull=false;  
     	speakerCon.wakeAll();
     	lock.release();  //speaker can now run
+    	//System.out.println("AFTERMATH LISTEN: " + this.comWord);
     	return this.comWord;
     }
     
@@ -121,6 +122,6 @@ public class Communicator {
         Lib.assertTrue(times[0] < times[2], "speak returned before listen.");
         Lib.assertTrue(times[1] < times[3], "speak returned before listen.");
         
-        System.out.println("works");
+        //System.out.println("works");
     }
 }
