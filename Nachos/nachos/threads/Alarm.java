@@ -3,7 +3,6 @@ package nachos.threads;
 import java.util.LinkedList;
 
 import nachos.machine.*;
-
  
 
 /**
@@ -18,12 +17,10 @@ public class Alarm {
      * <p><b>Note</b>: Nachos will not function correctly with more than one
      * alarm.
      */
-    public Alarm() {
-    	/*
-    	Machine.timer().setInterruptHandler(new Runnable() {
-    		public void run() { timerInterrupt(); }
-    	    });
-    	 */
+    public Alarm() { 
+	Machine.timer().setInterruptHandler(new Runnable() {
+		public void run() { timerInterrupt(); }
+	    });
     }
 
     /**
@@ -33,17 +30,23 @@ public class Alarm {
      * that should be run.
      */
     public void timerInterrupt() {
-	  //  KThread.currentThread().yield();
-	    
-	    // loop through queue 
-	    while (!tempqueue.isEmpty()) {
-	    	//if (waitUntil(x))
-	    	if (Machine.timer().getTime() >= Machine.timer().getTime() + x) {
-	        waitUntil(x); 
-	    	tempqueue.remove();
-	    	KThread.currentThread().yield();
+	       
+	    //loop through  linkedList
+	    for (int i = 0; i < tempqueue.size(); i++) {
+	    	Threadlist val = tempqueue.get(i);
+	    	 //If waitTime <= currentTime
+	    	if (val.time <= Machine.timer().getTime()) {
+	       
+	    	//Signal thread to wake
+	        val.s.V();
+	        
+	        // remove elements from the list
+	        tempqueue.remove(i--); 
 	    	}
-	    }    
+	    }
+	    
+	   //Yield thread to other processes
+    	KThread.currentThread().yield();
     }
 
     /**
@@ -61,36 +64,50 @@ public class Alarm {
      * @see	nachos.machine.Timer#getTime()
      */
     public void waitUntil(long x) {
-	// for now, cheat just to get something working (busy waiting is bad)
+	//Set wake time of threads
 	long wakeTime = Machine.timer().getTime() + x;
-	Semaphore hold = new Semaphore(0);
-	tempqueue.add(hold);
-	
-	 while (wakeTime > Machine.timer().getTime()) {
-	    // KThread.yield();
-		
-		// put thread to sleep
-		 hold.P();
-		//KThread.currentThread().sleep();
-
-	    // Time is up
-	    if (Machine.timer().getTime() >= wakeTime) {
-	        //Signal semaphore for thread to wake
-	        hold.V();
-	        //put thread on ready queue 
-            KThread.yield();
-	    }
-	 }
-	   
+	 
+	//Instantiate semaphore for thread
+    Semaphore hold = new Semaphore(0);
+    //Store thread that take in semaphore and time
+	Threadlist var = new Threadlist(hold, wakeTime);
+   
+	//Add to Linkedlist
+    tempqueue.add(var);
+     
+     //Put thread to sleep when waketime is not reached
+	 if (wakeTime > Machine.timer().getTime()) {
+		 //Thread sleep
+		hold.P();	 		 
+	 }  	 
     }
-    
+  /**
+   * Threadlist: A class that pass in semaphore and time as tuple to  the 
+   * linked list 
+   */
+  public static class Threadlist {
+	   Semaphore s;
+	   long time;
+	  
+	//Constructor taking in Semaphore and time
+	public Threadlist(Semaphore p, long time) {		   
+           this.s = p; 
+		   this.time = time; 
+		    
+	   } 
+   }
+      
     public static void selfTest() {
         KThread t1 = new KThread(new Runnable() {
             public void run() {
                 long time1 = Machine.timer().getTime();
                 int waitTime = 10000;
                 System.out.println("Thread calling wait at time:" + time1);
-                ThreadedKernel.alarm.waitUntil(waitTime);
+                System.out.println("time1 is ......" + time1);
+                ThreadedKernel.alarm.waitUntil(waitTime);   
+                System.out.println("The wait time is ......" + waitTime);
+                System.out.println("Currenttime ......" + Machine.timer().getTime());
+                System.out.println("time1NEW is  ......" + time1);
                 System.out.println("Thread woken up after:" + (Machine.timer().getTime() - time1));
                 Lib.assertTrue((Machine.timer().getTime() - time1) > waitTime, " thread woke up too early.");
                 
@@ -101,6 +118,10 @@ public class Alarm {
         t1.join();
     }
     
-   private long x;   
-   private LinkedList<Semaphore> tempqueue;       
+   //Variable for time to wait
+   private static long x;
+   // Create new Threadlist linkedlist
+   private LinkedList<Threadlist> tempqueue = new LinkedList<Threadlist>();  
 }
+
+ 
