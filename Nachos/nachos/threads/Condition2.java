@@ -94,6 +94,7 @@ public class Condition2 {
     	Lock lock = new Lock();
     	Condition2 con = new Condition2(lock);
     	KThread producer = new KThread(new Producer(item, lock, con));
+    	KThread producer1 = new KThread(new Producer(item, lock, con));
     	KThread consumer1 = new KThread(new Consumer(item, lock, con));
     	KThread consumer2 = new KThread(new Consumer(item, lock, con));
     	System.out.println("\n----------------------------------------------\nTEST CONDITION2\n");

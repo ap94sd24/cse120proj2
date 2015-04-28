@@ -281,7 +281,7 @@ public class KThread {
 		Lib.assertTrue(this != currentThread);
 		
 		//if child thread is finished running, then parent thread runs
-		//i think this is the parent
+		//i think "this" is the child
 		if(this.status != statusFinished){
 			//put parent thread to sleep
 			s.P();
@@ -394,6 +394,7 @@ public class KThread {
     }
 
     private static class PingTest implements Runnable {
+    	
 	PingTest(int which) {
 	    this.which = which;
 	}
@@ -414,15 +415,6 @@ public class KThread {
      */
     public static void selfTest() {
 	Lib.debug(dbgThread, "Enter KThread.selfTest");
-	/*
-	KThread k = new KThread(new PingTest(1));
-	k.setName("forked thread");
-	k.fork();
-	KThread k1 = new KThread(new PingTest(1));
-	k.setName("joined thread");
-	k.join();
-	new PingTest(0).run();
-	*/
 	
 	KThread k = new KThread(new Runnable(){
 		public void run(){
@@ -432,54 +424,10 @@ public class KThread {
 		}	
 	});
 	k.setName("join thread");
-	/*
-	KThread k1 = new KThread(new Runnable(){
-		public void run(){
-			for(int i = 1; i < 10; i++){
-				System.out.println(i);
-			}
-		}
-	});
-	*/
-	k.fork();
-	//k1.fork();
-	//k.join();
-	k.join();
-	/*
-	final BoundedBuffer b = new BoundedBuffer(256);
-	
-	KThread k1 = new KThread(new Runnable(){
-		public void run(){
-			String str = "FUCK THIS SHIT, FUCK CSE 120";
-			for(int i = 0; i<str.length(); i++){
-				b.put(str.charAt(i));
-			}
-			for(int i = 0; i < str.length(); i++){
-				System.out.println(b.get());
-			}
-		}	
-	});
 
-	
-	KThread k2 = new KThread(new Runnable(){
-		public void run(){
-			String str = "SHIT IS TOO HARD, FUCK MY LIFE";
-			for(int i = 0; i<str.length(); i++){
-				b.put(str.charAt(i));
-			}
-			for(int i = 0; i < str.length(); i++){
-				System.out.println(b.get());
-			}
-		}	
-	});
-	
-	k1.fork();
-	k2.fork();
-	k2.join();
-	k1.join();
-	
-	System.out.println("K1 SHOULD FINISH");
-	*/
+	k.fork();
+
+	k.join();
 	System.out.println("K SHOULD BE FINISHED.");
     }
     
@@ -512,7 +460,7 @@ public class KThread {
 
     /**
      * Unique identifer for this thread. Used to deterministically compare
-     * threads.
+     * threads.join
      */
     private int id = numCreated++;
     /** Number of times the KThread constructor was called. */
