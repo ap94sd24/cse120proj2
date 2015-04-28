@@ -160,7 +160,7 @@ public class KThread {
     private void runThread() {
 	begin();
 	target.run();
-	s.V();
+	s.V(); //always wake up thread when running it
 	finish();
     }
 
