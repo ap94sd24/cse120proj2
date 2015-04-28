@@ -276,18 +276,19 @@ public class KThread {
      * thread.
      */
     public void join() {
-	Lib.debug(dbgThread, "Joining to thread: " + toString());
-
-	Lib.assertTrue(this != currentThread);
+		Lib.debug(dbgThread, "Joining to thread: " + toString());
 	
-	//if child thread is finished running, then parent thread runs
-	//i think this is the parent
-	if(this.status != statusFinished){
-		s.P();
-	}
-	else{
-		return;
-	}
+		Lib.assertTrue(this != currentThread);
+		
+		//if child thread is finished running, then parent thread runs
+		//i think this is the parent
+		if(this.status != statusFinished){
+			//put parent thread to sleep
+			s.P();
+		}
+		else{
+			return;
+		}
 	
     }
 

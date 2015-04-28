@@ -17,8 +17,8 @@ public class Communicator {
 	
 	//variable to keep track on listen and spoken
 	//0 = do nothing
-	//1 = listen
-	//2 = speak
+	//1 = listen had run
+	//2 = speak had run
 	private int toDo; 
 	//stored communicator value
     private int comWord;
@@ -54,7 +54,7 @@ public class Communicator {
     	    //System.out.println("can't speak yet");
     	}
     	this.comWord = word;
-    	toDo = 2; //speaker has been done, now listen can run
+    	toDo = 2; //speaker has been done
     	listenerCon.wakeAll();
     	
     	lock.release(); //listen can now run
@@ -76,7 +76,7 @@ public class Communicator {
     		//System.out.println("waiting for speaker to speak");
     	    listenerCon.sleep();
     	} 
-    	toDo = 1;
+    	toDo = 1; //listen has been done
     	speakerCon.wakeAll();
     	lock.release();  //speaker can now run
     	//System.out.println("AFTERMATH LISTEN: " + this.comWord);
@@ -119,13 +119,14 @@ public class Communicator {
         speaker1.fork(); speaker2.fork(); listener1.fork(); listener2.fork();
         speaker1.join(); speaker2.join(); listener1.join(); listener2.join();
        
+        /*
         System.out.println("words  0: " + words[0]);
         System.out.println("words 1: " + words[1]);
         System.out.println("times : "  + times[0]);
         System.out.println("times : "  + times[1]);
         System.out.println("times : "  + times[2]);
         System.out.println("times : "  + times[3]);
-        
+        */
         
         Lib.assertTrue(words[0] == 4, "Didn't listen back spoken word."); 
         Lib.assertTrue(words[1] == 7, "Didn't listen back spoken word.");
