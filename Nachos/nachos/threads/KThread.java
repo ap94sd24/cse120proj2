@@ -281,7 +281,6 @@ public class KThread {
 		Lib.assertTrue(this != currentThread);
 		
 		//if child thread is finished running, then parent thread runs
-		//i think "this" is the child
 		if(this.status != statusFinished){
 			//put parent thread to sleep
 			s.P();
