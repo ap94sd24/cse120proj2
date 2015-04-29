@@ -23,7 +23,9 @@ public class Condition2 {
      *				<tt>wake()</tt>, or <tt>wakeAll()</tt>.
      */
     public Condition2(Lock conditionLock) {
-	     this.conditionLock = conditionLock;     
+	     this.conditionLock = conditionLock; 
+	    //Use to store threads for sleep/wake methods
+	     waitQ = new LinkedList<KThread>(); 
     }
     
 
@@ -41,16 +43,11 @@ public class Condition2 {
 	
 	//Release associated lock
 	conditionLock.release();
-
-	//Put current thread to sleep when semaphore value is 0
-	if (value == 0) {
-	    waitQueue.waitForAccess(KThread.currentThread());
-	    KThread.sleep();
-	}
-	//Decrease the initial value of semaphore 
-	else {
-	    value--;
-	}
+	// Add current thread to the linkedList
+	waitQ.add(KThread.currentThread());
+	//Put thread to sleep
+	KThread.sleep();
+	
 	// Restore the status
 	Machine.interrupt().restore(intStatus);	
 	
@@ -66,22 +63,14 @@ public class Condition2 {
     	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
     	//Thread status
     	boolean intStatus = Machine.interrupt().disable();
-    	
-    	//Get next thread in queue
-    	KThread thread = waitQueue.nextThread();
-    	
-    	//Put thread to ready state
-    	if (thread != null) {
-    	    thread.ready();
+    	      	
+    	//Put thread to ready state by removing from the linkedList
+    	if (!waitQ.isEmpty()) {
+    		waitQ.remove().ready(); 	    
     	}
-    	//Increase semaphore value top thread to waitQueue
-    	else {
-    	    value++;
-    	}
-    	
+    	 
     	//Restore thread status
     	Machine.interrupt().restore(intStatus);
-	
     }
 
     /**
@@ -91,7 +80,9 @@ public class Condition2 {
     public void wakeAll() {
     	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
     	//Call wake method to wake all threads
-	 	wake(); 
+        while (!waitQ.isEmpty()) {
+	 	    wake(); 
+      }
     }
     
     public static void selfTest(){
@@ -104,10 +95,17 @@ public class Condition2 {
     	KThread consumer1 = new KThread(new Consumer(item, lock, con));
     	KThread consumer2 = new KThread(new Consumer(item, lock, con));
     	System.out.println("\n----------------------------------------------\nTEST CONDITION2\n");
+    	 
+    	producer1.fork(); 
     	consumer1.fork();
     	consumer2.fork();
     	producer.fork();
-    	//ThreadedKernel.alarm.waitUntil(100000);
+    	
+    	producer.join();
+    	producer1.join();
+    	consumer1.join();
+    	consumer2.join();
+    	 
     }
     
     private static class Consumer implements Runnable{
@@ -149,8 +147,8 @@ public class Condition2 {
     	}
     }
     
-    private int value; 
+    
     private Lock conditionLock;
-    private ThreadQueue waitQueue =
-    		ThreadedKernel.scheduler.newThreadQueue(false);
+    //Create LinkedList to store threads
+    private LinkedList<KThread> waitQ;  
 }
