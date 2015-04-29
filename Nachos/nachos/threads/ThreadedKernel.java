@@ -48,6 +48,7 @@ public class ThreadedKernel extends Kernel {
     public void selfTest() {
 	KThread.selfTest();
 	Semaphore.selfTest();
+	Alarm.selfTest(); 
 	SynchList.selfTest();
 	Condition2.selfTest();
 	Communicator.selfTest();
@@ -73,7 +74,7 @@ public class ThreadedKernel extends Kernel {
     /** Globally accessible reference to the scheduler. */
     public static Scheduler scheduler = null;
     /** Globally accessible reference to the alarm. */
-    public static Alarm alarm = null;
+    public static Alarm alarm = new Alarm();
     /** Globally accessible reference to the file system. */
     public static FileSystem fileSystem = null;
 
