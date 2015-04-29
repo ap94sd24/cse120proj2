@@ -23,9 +23,7 @@ public class Condition2 {
      *				<tt>wake()</tt>, or <tt>wakeAll()</tt>.
      */
     public Condition2(Lock conditionLock) {
-	     this.conditionLock = conditionLock;
-	     
-	     //waitQueue = new LinkedList<ThreadKernel>(); 
+	     this.conditionLock = conditionLock;     
     }
     
 
@@ -36,25 +34,27 @@ public class Condition2 {
      * automatically reacquire the lock before <tt>sleep()</tt> returns.
      */
     public void sleep() {
+    	//Thread status
     	boolean intStatus = Machine.interrupt().disable();
-    
+    //Debug for current thread lock
 	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
 	
-	//initialize wait value
-    //waitQueue.add(wait);
-	
+	//Release associated lock
 	conditionLock.release();
 
+	//Put current thread to sleep when semaphore value is 0
 	if (value == 0) {
 	    waitQueue.waitForAccess(KThread.currentThread());
 	    KThread.sleep();
 	}
+	//Decrease the initial value of semaphore 
 	else {
 	    value--;
 	}
-
+	// Restore the status
 	Machine.interrupt().restore(intStatus);	
-
+	
+	//Reacquire the lock
 	conditionLock.acquire();
     }
 
@@ -64,17 +64,22 @@ public class Condition2 {
      */
     public void wake() {
     	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
-    	
+    	//Thread status
     	boolean intStatus = Machine.interrupt().disable();
-
+    	
+    	//Get next thread in queue
     	KThread thread = waitQueue.nextThread();
+    	
+    	//Put thread to ready state
     	if (thread != null) {
     	    thread.ready();
     	}
+    	//Increase semaphore value top thread to waitQueue
     	else {
     	    value++;
     	}
     	
+    	//Restore thread status
     	Machine.interrupt().restore(intStatus);
 	
     }
@@ -85,6 +90,7 @@ public class Condition2 {
      */
     public void wakeAll() {
     	Lib.assertTrue(conditionLock.isHeldByCurrentThread());
+    	//Call wake method to wake all threads
 	 	wake(); 
     }
     
@@ -147,7 +153,4 @@ public class Condition2 {
     private Lock conditionLock;
     private ThreadQueue waitQueue =
     		ThreadedKernel.scheduler.newThreadQueue(false);
-	public void call() {
-		// TODO Auto-generated method stub
-	}
 }
